@@ -3,189 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tech Deputy Console</title>
+    <title>Tech Deputy Console - Face ID</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --accent: #e67e22;
-            --danger: #e74c3c;
-            --light: #ecf0f1;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background-color: #1a1a1a;
-            color: var(--light);
-        }
-
-        /* Navigation Bar */
-        nav {
-            background: var(--primary);
-            display: flex;
-            justify-content: center;
-            padding: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        nav button {
-            background: transparent;
-            border: 2px solid transparent;
-            color: white;
-            padding: 10px 20px;
-            margin: 0 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            border-radius: 5px;
-        }
-
-        nav button.active {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        /* Container Sections */
-        .tab-content {
-            display: none;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .card {
-            background: #2c3e50;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 5px solid var(--accent);
-            margin-bottom: 20px;
-        }
-
-        /* Surveillance Styles */
-        .video-placeholder {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed #444;
-            position: relative;
-        }
-
-        .status-pulse {
-            width: 15px;
-            height: 15px;
-            background: var(--danger);
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 1.5s infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
-
-        /* History List */
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px;
-            border-bottom: 1px solid #3e4f5f;
-        }
-
-        .history-item:last-child { border: none; }
+        :root { --primary: #2c3e50; --accent: #e67e22; --danger: #e74c3c; --success: #2ecc71; --light: #ecf0f1; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #1a1a1a; color: var(--light); overflow-x: hidden; }
         
-        .timestamp { color: var(--accent); font-family: monospace; }
+        nav { background: var(--primary); display: flex; justify-content: center; padding: 1rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        nav button { background: transparent; border: 2px solid transparent; color: white; padding: 10px 20px; margin: 0 10px; cursor: pointer; font-weight: bold; border-radius: 5px; }
+        nav button.active { border-color: var(--accent); color: var(--accent); }
 
-        h1 { text-align: center; color: var(--accent); }
+        .tab-content { display: none; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .tab-content.active { display: block; }
+        
+        .card { background: #2c3e50; padding: 20px; border-radius: 10px; border-left: 5px solid var(--accent); margin-bottom: 20px; }
+        
+        #video-container { position: relative; width: 100%; max-width: 640px; margin: 0 auto; background: #000; border: 3px solid #444; }
+        video { width: 100%; height: auto; display: block; }
+        canvas { position: absolute; top: 0; left: 0; }
+
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-scan { background: var(--success); }
+        .btn-alarm { background: var(--danger); }
+        
+        .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #3e4f5f; }
+        .timestamp { color: var(--accent); font-family: monospace; }
+        .status-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
 <nav>
-    <button onclick="openTab('dashboard')" id="defaultOpen">DASHBOARD</button>
-    <button onclick="openTab('surveillance')">START SURVEILLANCE</button>
+    <button onclick="openTab('surveillance')" id="defaultOpen">SURVEILLANCE</button>
     <button onclick="openTab('history')">HISTORY</button>
 </nav>
 
-<div id="dashboard" class="tab-content">
-    <h1>SHERIFF'S TECH DEPUTY</h1>
-    <div class="card">
-        <h2>Mission Status</h2>
-        <p>Wrangling Alarm Systems... <strong>READY</strong></p>
-    </div>
-    <div class="card" style="border-left-color: var(--danger);">
-        <h2 style="color: var(--danger);">!!! INTRUDER ALERT !!!</h2>
-        <p>Last activity detected on the frontier 5 minutes ago.</p>
-    </div>
-</div>
-
 <div id="surveillance" class="tab-content">
-    <h1>LIVE SURVEILLANCE</h1>
+    <h1 style="text-align: center; color: var(--accent);">FRONTIER MONITOR</h1>
     <div class="card">
-        <div style="margin-bottom: 15px;">
-            <span class="status-pulse"></span> LIVE FEED: CAMERA_01
+        <div id="video-container">
+            <video id="videoFeed" autoplay muted playsinline></video>
         </div>
-        <div class="video-placeholder">
-            <p>[ CAMERA FEED CONNECTING... ]</p>
+        
+        <div class="controls">
+            <button class="btn btn-scan" onclick="registerEmployer()">SCAN EMPLOYEE FACE</button>
+            <button class="btn btn-alarm" id="alarmToggle">SYSTEM ARMED</button>
         </div>
-        <div style="margin-top: 20px; text-align: center;">
-            <button onclick="alert('Recording Started')" style="padding: 10px 20px; background: var(--danger); border: none; color: white; border-radius: 5px; cursor: pointer;">MANUAL RECORD</button>
-        </div>
+        <p id="status-text" style="text-align: center; margin-top: 15px; font-weight: bold;">Loading AI Models...</p>
     </div>
 </div>
 
 <div id="history" class="tab-content">
-    <h1>EVENT HISTORY</h1>
-    <div class="card">
-        <div class="history-item">
-            <span>Intrusion Detected - Front Gate</span>
-            <span class="timestamp">2024-05-20 14:22:01</span>
-        </div>
-        <div class="history-item">
-            <span>System Armed</span>
-            <span class="timestamp">2024-05-20 08:00:45</span>
-        </div>
-        <div class="history-item">
-            <span>Power Cycle Completed</span>
-            <span class="timestamp">2024-05-19 23:15:10</span>
-        </div>
+    <h1 style="text-align: center; color: var(--accent);">SECURITY LOGS</h1>
+    <div id="history-list" class="card">
+        <div class="history-item"><i>No events recorded yet.</i></div>
     </div>
 </div>
 
 <script>
+    let authorizedDescriptors = [];
+    let isSystemArmed = true;
+
+    // 1. Initialize Camera and AI
+    async function setupCamera() {
+        const video = document.getElementById('videoFeed');
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+
+        // Load Models from CDN
+        const MODEL_URL = 'https://raw.githubusercontent.com/ml5js/ml5-data-and-models/main/models/faceapi/';
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        
+        document.getElementById('status-text').innerText = "System Online: Ready for Surveillance";
+        startSurveillance();
+    }
+
+    // 2. Register Employer (Whitelist)
+    async function registerEmployer() {
+        const video = document.getElementById('videoFeed');
+        const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+        
+        if (detection) {
+            authorizedDescriptors.push(detection.descriptor);
+            addHistoryEntry("Employee Registered", "Success");
+            alert("Face whitelisted. You will no longer trigger the alarm.");
+        } else {
+            alert("Face not detected. Stand closer!");
+        }
+    }
+
+    // 3. Continuous Surveillance Loop
+    async function startSurveillance() {
+        const video = document.getElementById('videoFeed');
+        
+        setInterval(async () => {
+            const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
+            
+            if (detections.length > 0 && isSystemArmed) {
+                detections.forEach(face => {
+                    let isAuthorized = false;
+                    
+                    // Compare against whitelist
+                    authorizedDescriptors.forEach(authFace => {
+                        const distance = faceapi.euclideanDistance(face.descriptor, authFace);
+                        if (distance < 0.6) isAuthorized = true; // 0.6 is the standard threshold
+                    });
+
+                    if (!isAuthorized) {
+                        triggerAlarm();
+                    }
+                });
+            }
+        }, 1000); // Check every 1 second
+    }
+
+    function triggerAlarm() {
+        document.getElementById('video-container').style.borderColor = "red";
+        addHistoryEntry("Intruder Detected!", "Danger");
+        // Flash red screen effect
+        document.body.style.backgroundColor = "#4a0000";
+        setTimeout(() => document.body.style.backgroundColor = "#1a1a1a", 500);
+    }
+
+    function addHistoryEntry(message, type) {
+        const list = document.getElementById('history-list');
+        const now = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = 'history-item';
+        entry.innerHTML = `<span>${message}</span><span class="timestamp">${now}</span>`;
+        list.prepend(entry);
+    }
+
     function openTab(tabName) {
-        // Hide all tabs
         var i, tabcontent, tablinks;
         tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-
-        // Deactivate all buttons
+        for (i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
         tablinks = document.querySelectorAll("nav button");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].classList.remove("active");
-        }
-
-        // Show current tab and mark button as active
+        for (i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
         document.getElementById(tabName).style.display = "block";
         event.currentTarget.classList.add("active");
     }
 
-    // Set default tab
     document.getElementById("defaultOpen").click();
+    setupCamera();
 </script>
 
 </body>
