@@ -2,84 +2,191 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sheriff's Tech Deputy Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Deputy Console</title>
     <style>
-        /* This makes it look like the "Wanted" poster */
-        body { 
-            background-color: #d2b48c; /* Tan/Paper color */
-            color: #3e2723; 
-            text-align: center; 
-            font-family: 'Courier New', Courier, monospace;
+        :root {
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: var(--light);
+        }
+
+        /* Navigation Bar */
+        nav {
+            background: var(--primary);
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav button {
+            background: transparent;
+            border: 2px solid transparent;
+            color: white;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            border-radius: 5px;
+        }
+
+        nav button.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Container Sections */
+        .tab-content {
+            display: none;
             padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        #monitor { 
-            border: 15px solid #5d4037; 
-            box-shadow: 10px 10px 5px #888888;
-            background: black;
+
+        .tab-content.active {
+            display: block;
         }
-        .alert { color: #b71c1c; font-size: 2em; font-weight: bold; visibility: hidden; }
+
+        .card {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid var(--accent);
+            margin-bottom: 20px;
+        }
+
+        /* Surveillance Styles */
+        .video-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #444;
+            position: relative;
+        }
+
+        .status-pulse {
+            width: 15px;
+            height: 15px;
+            background: var(--danger);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        /* History List */
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #3e4f5f;
+        }
+
+        .history-item:last-child { border: none; }
+        
+        .timestamp { color: var(--accent); font-family: monospace; }
+
+        h1 { text-align: center; color: var(--accent); }
     </style>
 </head>
 <body>
 
-    <h1>TECH DEPUTY SURVEILLANCE</h1>
-    <p>Mission: Wrangling Alarm Systems</p>
+<nav>
+    <button onclick="openTab('dashboard')" id="defaultOpen">DASHBOARD</button>
+    <button onclick="openTab('surveillance')">START SURVEILLANCE</button>
+    <button onclick="openTab('history')">HISTORY</button>
+</nav>
 
-    <video id="webcam" width="640" height="480" autoplay playsinline></video>
-    <canvas id="buffer" width="640" height="480" style="display:none;"></canvas>
+<div id="dashboard" class="tab-content">
+    <h1>SHERIFF'S TECH DEPUTY</h1>
+    <div class="card">
+        <h2>Mission Status</h2>
+        <p>Wrangling Alarm Systems... <strong>READY</strong></p>
+    </div>
+    <div class="card" style="border-left-color: var(--danger);">
+        <h2 style="color: var(--danger);">!!! INTRUDER ALERT !!!</h2>
+        <p>Last activity detected on the frontier 5 minutes ago.</p>
+    </div>
+</div>
 
-    <div id="alarm-text" class="alert">!!! INTRUDER ON THE FRONTIER !!!</div>
+<div id="surveillance" class="tab-content">
+    <h1>LIVE SURVEILLANCE</h1>
+    <div class="card">
+        <div style="margin-bottom: 15px;">
+            <span class="status-pulse"></span> LIVE FEED: CAMERA_01
+        </div>
+        <div class="video-placeholder">
+            <p>[ CAMERA FEED CONNECTING... ]</p>
+        </div>
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="alert('Recording Started')" style="padding: 10px 20px; background: var(--danger); border: none; color: white; border-radius: 5px; cursor: pointer;">MANUAL RECORD</button>
+        </div>
+    </div>
+</div>
 
-    <script>
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('buffer');
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        const alarmText = document.getElementById('alarm-text');
+<div id="history" class="tab-content">
+    <h1>EVENT HISTORY</h1>
+    <div class="card">
+        <div class="history-item">
+            <span>Intrusion Detected - Front Gate</span>
+            <span class="timestamp">2024-05-20 14:22:01</span>
+        </div>
+        <div class="history-item">
+            <span>System Armed</span>
+            <span class="timestamp">2024-05-20 08:00:45</span>
+        </div>
+        <div class="history-item">
+            <span>Power Cycle Completed</span>
+            <span class="timestamp">2024-05-19 23:15:10</span>
+        </div>
+    </div>
+</div>
 
-        let lastFrameData = null;
-
-        // 1. Get the camera feed (asking for 120fps)
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { frameRate: { ideal: 120 } } 
-                });
-                video.srcObject = stream;
-                video.play();
-                detectMotion();
-            } catch (err) {
-                console.error("The Sheriff couldn't find a camera!", err);
-            }
+<script>
+    function openTab(tabName) {
+        // Hide all tabs
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
         }
 
-        // 2. The Logic to detect motion
-        function detectMotion() {
-            // Draw current video frame to the hidden canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const currentFrame = context.getImageData(0, 0, canvas.width, canvas.height);
-
-            if (lastFrameData) {
-                let diffCount = 0;
-                // Compare every 4th pixel to save processing power
-                for (let i = 0; i < currentFrame.data.length; i += 4) {
-                    const rDiff = Math.abs(currentFrame.data[i] - lastFrameData.data[i]);
-                    if (rDiff > 30) diffCount++; 
-                }
-
-                // 3. If enough pixels changed, trigger the alarm
-                if (diffCount > 5000) { 
-                    alarmText.style.visibility = "visible";
-                } else {
-                    alarmText.style.visibility = "hidden";
-                }
-            }
-
-            lastFrameData = currentFrame;
-            // Run again as fast as the browser allows (matches the FPS)
-            requestAnimationFrame(detectMotion);
+        // Deactivate all buttons
+        tablinks = document.querySelectorAll("nav button");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
         }
 
-        startCamera();
-    </script>
+        // Show current tab and mark button as active
+        document.getElementById(tabName).style.display = "block";
+        event.currentTarget.classList.add("active");
+    }
+
+    // Set default tab
+    document.getElementById("defaultOpen").click();
+</script>
+
 </body>
 </html>
