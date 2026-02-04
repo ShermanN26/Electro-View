@@ -3,153 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tech Deputy Console - Face ID</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <style>
-        :root { --primary: #2c3e50; --accent: #e67e22; --danger: #e74c3c; --success: #2ecc71; --light: #ecf0f1; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #1a1a1a; color: var(--light); overflow-x: hidden; }
-        
-        nav { background: var(--primary); display: flex; justify-content: center; padding: 1rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        nav button { background: transparent; border: 2px solid transparent; color: white; padding: 10px 20px; margin: 0 10px; cursor: pointer; font-weight: bold; border-radius: 5px; }
-        nav button.active { border-color: var(--accent); color: var(--accent); }
-
-        .tab-content { display: none; padding: 20px; max-width: 1000px; margin: 0 auto; }
-        .tab-content.active { display: block; }
-        
-        .card { background: #2c3e50; padding: 20px; border-radius: 10px; border-left: 5px solid var(--accent); margin-bottom: 20px; }
-        
-        #video-container { position: relative; width: 100%; max-width: 640px; margin: 0 auto; background: #000; border: 3px solid #444; }
-        video { width: 100%; height: auto; display: block; }
-        canvas { position: absolute; top: 0; left: 0; }
-
-        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-        .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-scan { background: var(--success); }
-        .btn-alarm { background: var(--danger); }
-        
-        .history-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #3e4f5f; }
-        .timestamp { color: var(--accent); font-family: monospace; }
-        .status-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
-    </style>
+    <title>ELECTRO-VIEW // FRONTIER MONITOR</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="cyber-overlay"></div>
+    
+    <header>
+        <div class="logo">TECH DEPUTY CONSOLE <span class="blink">_</span></div>
+        <div class="system-status">SYSTEM: <span id="status-text">ARMED</span></div>
+    </header>
 
-<nav>
-    <button onclick="openTab('surveillance')" id="defaultOpen">SURVEILLANCE</button>
-    <button onclick="openTab('history')">HISTORY</button>
-</nav>
+    <main class="console-grid">
+        <section class="monitor-section">
+            <div class="screen-header">LIVE_FEED // CAMERA_01</div>
+            <div id="video-container" class="surveillance-box">
+                <div class="rec-dot"></div>
+                <video id="webcam" autoplay playsinline></video>
+                <div class="corner-text top-left">45.7291° N</div>
+                <div class="corner-text bottom-right">24.1802° E</div>
+            </div>
+        </section>
 
-<div id="surveillance" class="tab-content">
-    <h1 style="text-align: center; color: var(--accent);">FRONTIER MONITOR</h1>
-    <div class="card">
-        <div id="video-container">
-            <video id="videoFeed" autoplay muted playsinline></video>
-        </div>
-        
-        <div class="controls">
-            <button class="btn btn-scan" onclick="registerEmployer()">SCAN EMPLOYEE FACE</button>
-            <button class="btn btn-alarm" id="alarmToggle">SYSTEM ARMED</button>
-        </div>
-        <p id="status-text" style="text-align: center; margin-top: 15px; font-weight: bold;">Loading AI Models...</p>
-    </div>
-</div>
+        <section class="data-section">
+            <div class="screen-header">SECURITY_LOGS</div>
+            <div id="security-logs" class="log-container">
+                <p class="system-msg">[SYSTEM] INITIALIZING NEURAL LINK...</p>
+            </div>
+        </section>
+    </main>
 
-<div id="history" class="tab-content">
-    <h1 style="text-align: center; color: var(--accent);">SECURITY LOGS</h1>
-    <div id="history-list" class="card">
-        <div class="history-item"><i>No events recorded yet.</i></div>
-    </div>
-</div>
-
-<script>
-    let authorizedDescriptors = [];
-    let isSystemArmed = true;
-
-    // 1. Initialize Camera and AI
-    async function setupCamera() {
-        const video = document.getElementById('videoFeed');
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-
-        // Load Models from CDN
-        const MODEL_URL = 'https://raw.githubusercontent.com/ml5js/ml5-data-and-models/main/models/faceapi/';
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        
-        document.getElementById('status-text').innerText = "System Online: Ready for Surveillance";
-        startSurveillance();
-    }
-
-    // 2. Register Employer (Whitelist)
-    async function registerEmployer() {
-        const video = document.getElementById('videoFeed');
-        const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-        
-        if (detection) {
-            authorizedDescriptors.push(detection.descriptor);
-            addHistoryEntry("Employee Registered", "Success");
-            alert("Face whitelisted. You will no longer trigger the alarm.");
-        } else {
-            alert("Face not detected. Stand closer!");
-        }
-    }
-
-    // 3. Continuous Surveillance Loop
-    async function startSurveillance() {
-        const video = document.getElementById('videoFeed');
-        
-        setInterval(async () => {
-            const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
-            
-            if (detections.length > 0 && isSystemArmed) {
-                detections.forEach(face => {
-                    let isAuthorized = false;
-                    
-                    // Compare against whitelist
-                    authorizedDescriptors.forEach(authFace => {
-                        const distance = faceapi.euclideanDistance(face.descriptor, authFace);
-                        if (distance < 0.6) isAuthorized = true; // 0.6 is the standard threshold
-                    });
-
-                    if (!isAuthorized) {
-                        triggerAlarm();
-                    }
-                });
-            }
-        }, 1000); // Check every 1 second
-    }
-
-    function triggerAlarm() {
-        document.getElementById('video-container').style.borderColor = "red";
-        addHistoryEntry("Intruder Detected!", "Danger");
-        // Flash red screen effect
-        document.body.style.backgroundColor = "#4a0000";
-        setTimeout(() => document.body.style.backgroundColor = "#1a1a1a", 500);
-    }
-
-    function addHistoryEntry(message, type) {
-        const list = document.getElementById('history-list');
-        const now = new Date().toLocaleTimeString();
-        const entry = document.createElement('div');
-        entry.className = 'history-item';
-        entry.innerHTML = `<span>${message}</span><span class="timestamp">${now}</span>`;
-        list.prepend(entry);
-    }
-
-    function openTab(tabName) {
-        var i, tabcontent, tablinks;
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
-        tablinks = document.querySelectorAll("nav button");
-        for (i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
-        document.getElementById(tabName).style.display = "block";
-        event.currentTarget.classList.add("active");
-    }
-
-    document.getElementById("defaultOpen").click();
-    setupCamera();
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
