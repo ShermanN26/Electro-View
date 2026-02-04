@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sheriff's Tech Deputy Console</title>
+    <style>
+        /* This makes it look like the "Wanted" poster */
+        body { 
+            background-color: #d2b48c; /* Tan/Paper color */
+            color: #3e2723; 
+            text-align: center; 
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+        }
+        #monitor { 
+            border: 15px solid #5d4037; 
+            box-shadow: 10px 10px 5px #888888;
+            background: black;
+        }
+        .alert { color: #b71c1c; font-size: 2em; font-weight: bold; visibility: hidden; }
+    </style>
+</head>
+<body>
+
+    <h1>TECH DEPUTY SURVEILLANCE</h1>
+    <p>Mission: Wrangling Alarm Systems</p>
+
+    <video id="webcam" width="640" height="480" autoplay playsinline></video>
+    <canvas id="buffer" width="640" height="480" style="display:none;"></canvas>
+
+    <div id="alarm-text" class="alert">!!! INTRUDER ON THE FRONTIER !!!</div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('buffer');
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        const alarmText = document.getElementById('alarm-text');
+
+        let lastFrameData = null;
+
+        // 1. Get the camera feed (asking for 120fps)
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { frameRate: { ideal: 120 } } 
+                });
+                video.srcObject = stream;
+                video.play();
+                detectMotion();
+            } catch (err) {
+                console.error("The Sheriff couldn't find a camera!", err);
+            }
+        }
+
+        // 2. The Logic to detect motion
+        function detectMotion() {
+            // Draw current video frame to the hidden canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const currentFrame = context.getImageData(0, 0, canvas.width, canvas.height);
+
+            if (lastFrameData) {
+                let diffCount = 0;
+                // Compare every 4th pixel to save processing power
+                for (let i = 0; i < currentFrame.data.length; i += 4) {
+                    const rDiff = Math.abs(currentFrame.data[i] - lastFrameData.data[i]);
+                    if (rDiff > 30) diffCount++; 
+                }
+
+                // 3. If enough pixels changed, trigger the alarm
+                if (diffCount > 5000) { 
+                    alarmText.style.visibility = "visible";
+                } else {
+                    alarmText.style.visibility = "hidden";
+                }
+            }
+
+            lastFrameData = currentFrame;
+            // Run again as fast as the browser allows (matches the FPS)
+            requestAnimationFrame(detectMotion);
+        }
+
+        startCamera();
+    </script>
+</body>
+</html>
